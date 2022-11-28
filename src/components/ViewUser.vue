@@ -1,0 +1,211 @@
+<template>
+    <div>
+        <el-row type="flex" justify="start" align="middle" class="toolbar">
+            <el-col :span="4">
+                <el-button icon="el-icon-s-cooperation" type="primary" @click="doCreate" title="add a user"></el-button>
+            </el-col>
+            <el-col :span="20"></el-col>
+        </el-row>
+        <el-table :data="tableData" border style="width: 100%" stripe>
+            <el-table-column fixed prop="id" label="id" width="50">
+            </el-table-column>
+            <el-table-column label="Avatar" width="80">
+                <template slot-scope="scope">
+                    <img v-bind:src="scope.row.avatar" width="40px"/>
+                </template>
+            </el-table-column>
+              <el-table-column prop="username" label="UserName">
+                  
+            </el-table-column>
+               <el-table-column prop="role_id" label="RoleId">
+            </el-table-column>
+            <!--<el-table-column  label="TestId">
+                <el-select v-model="value"  clearable placeholder="请选择">
+                       <el-option label="null" :value="null"></el-option>
+                        <el-option
+                            v-for="item in tableData"
+                            :key="item.id"
+                            :label="item.id"
+                            :value="item.id">
+                       </el-option>
+                      
+                    </el-select>
+
+            </el-table-column> -->
+            
+            <el-table-column prop="email" label="Email">
+            </el-table-column>
+            <el-table-column prop="mobile" label="Mobile" width="180">
+            </el-table-column>
+
+           
+
+            <el-table-column fixed="right" label="Action" width="240">
+                <template slot-scope="scope">
+                    <el-button-group>
+                        <el-button
+                                title="view ssh machine information"
+                                @click="doUpdate(scope.row)"
+                                :disabled="scope.row.id == 1"
+                                
+                                type="success"
+                                size="small"
+                                icon="el-icon-edit"
+                        ></el-button>
+                        <el-button
+                                title="delete ssh connection"
+                                @click="doDelete(scope.row)"
+                                :disabled="scope.row.id == 1"
+                                type="danger"
+                                size="small"
+                                icon="el-icon-delete-solid"
+                        ></el-button>
+                    </el-button-group>
+
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                style="margin-top: 20px"
+                @size-change="sizeChange"
+                @current-change="pageChange"
+                :current-page="page"
+                :page-sizes="[10,15, 30, 45, 60]"
+                :page-size="size"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="total">
+        </el-pagination>
+
+
+        <!--edit-->
+        <el-dialog title="编辑用户信息" :visible.sync="dialogFormVisible">
+            <el-form :model="form">
+                <el-form-item label="UserName" label-width="formLabelWidth">
+                    <el-input v-model="form.username" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="password" label-width="formLabelWidth">
+                    <el-input v-model="form.password" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="email" label-width="formLabelWidth">
+                    <el-input v-model="form.email" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="mobile" label-width="formLabelWidth">
+                    <el-input v-model="form.mobile" autocomplete="off"></el-input>
+                </el-form-item>
+                
+                <el-form-item label="avatar" label-width="formLabelWidth">
+                    <el-input v-model="form.avatar" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="Role" label-width="formLabelWidth">
+                    <el-select v-model="form.role_id" placeholder="role">
+                        <el-option label="SuperAdmin" :value="2"></el-option>
+                         <el-option label="OPS" :value="4"></el-option>
+                        <el-option label="Dev" :value="8"></el-option>
+                        <el-option label="Test" :value="16"></el-option>
+                      
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">Cancel</el-button>
+                <el-button type="primary" @click="handleFormSubmit">Submit</el-button>
+            </div>
+        </el-dialog>
+
+    </div>
+
+</template>
+
+<script>
+
+    export default {
+        name: 'ViewUser',
+       
+       
+        data() {
+            
+            
+            return {
+                formLabelWidth: "120",
+                dialogFormVisible: false,
+                total: 0,
+                page: 1,
+                size: 10,
+                tableData: [],
+                form: {},
+                q: "",
+                value: 0
+   
+            };
+            
+        },
+        mounted() {
+            this.fetchAllUser();
+        },
+        created() {
+        },
+        methods: {
+            doCreate() {
+                this.dialogFormVisible = true
+            },
+            pageChange(val) {
+                this.page = val;
+                this.fetchAllUser()
+            },
+            sizeChange(val) {
+                this.page = 1;
+                this.size = val;
+                this.fetchAllUser()
+            },
+            fetchAllUser() {
+                let page = this.page;
+                let size = this.size;
+                let where = '';
+                this.$http.get("api/user", {params: {where, page, size}})
+                    .then(resp => {
+                        if (resp) {
+                            this.total = resp.total;
+                            this.size = resp.size;
+                            this.page = resp.page;
+                            this.tableData = resp.data
+                        }
+
+                    })
+            },
+            doUpdate(row) {
+                this.form = row;
+                this.dialogFormVisible = true
+            },
+            handleFormSubmit() {
+                let method = 'post';
+                let url = 'api/user';
+                if (this.form.id > 0) {
+                    method = "patch";
+                } else {
+                    method = "post"
+                }
+                let data = this.form;
+                this.$http({method, url, data}).then(res => {
+                    if (res) {
+                        this.$message.success("success");
+                        this.dialogFormVisible = false;
+                        this.fetchAllUser()
+                    }
+                })
+            },
+            doDelete(row) {
+                this.$http.delete(`api/user/${row.id}`).then(res => {
+                    if (res) {
+                        this.fetchAllUser();
+                        this.$message.success(res.msg)
+                    }
+                })
+            }
+        },
+       
+    };
+</script>
+<style scoped>
+
+
+</style>
